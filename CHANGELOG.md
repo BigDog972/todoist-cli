@@ -1,3 +1,9 @@
+## [6.2.0](https://github.com/todoist/todoist-cli/compare/v6.1.0...v6.2.0) (2026-11-17)
+
+### Features
+
+* **status:** set and show a status that has only an emoji ([#655](https://github.com/todoist/todoist-cli/issues/655)) ([b6d5674](https://github.com/todoist/todoist-cli/commit/b6d5674b0b9c71584600ce44bbd7c5652e46b4ff))
+
 ## [6.1.0](https://github.com/todoist/todoist-cli/compare/v6.0.1...v6.1.0) (2026-11-12)
 
 ### Features
