@@ -1,3 +1,13 @@
+## [7.0.0](https://github.com/todoist/todoist-cli/compare/v6.2.0...v7.0.0) (2026-11-19)
+
+### ⚠ BREAKING CHANGES
+
+* remove td project health-context (#656)
+
+### Bug Fixes
+
+* remove td project health-context ([#656](https://github.com/todoist/todoist-cli/issues/656)) ([97fd95d](https://github.com/todoist/todoist-cli/commit/97fd95da121cbf47bdc28bbbf0ff51602982fa05)), closes [todoist/Todoist#28464](https://github.com/todoist/Todoist/issues/28464) [todoist/todoist-sdk-typescript#778](https://github.com/todoist/todoist-sdk-typescript/issues/778) [todoist/todoist-mcp#722](https://github.com/todoist/todoist-mcp/issues/722)
+
 ## [6.2.0](https://github.com/todoist/todoist-cli/compare/v6.1.0...v6.2.0) (2026-11-17)
 
 ### Features
