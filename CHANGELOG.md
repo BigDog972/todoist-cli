@@ -1,3 +1,9 @@
+## [7.1.0](https://github.com/todoist/todoist-cli/compare/v7.0.2...v7.1.0) (2026-11-20)
+
+### Features
+
+* **project:** read workspace projects the user hasn't joined ([#664](https://github.com/todoist/todoist-cli/issues/664)) ([9f03e5b](https://github.com/todoist/todoist-cli/commit/9f03e5bcf12a284e403f231eb13cd72bcf85ba90))
+
 ## [7.0.2](https://github.com/todoist/todoist-cli/compare/v7.0.1...v7.0.2) (2026-11-20)
 
 ### Bug Fixes
