@@ -213,7 +213,7 @@ New subcommand? Copy a sibling in the target group, wire it in that group's
   `resolveTaskRef`, `resolveProjectRef`, `resolveProjectId`,
   `resolveSectionId`, `resolveParentTaskId`, `resolveWorkspaceRef`,
   `resolveFolderRef`, `resolveAppRef`, `resolveFromList`,
-  `parseTodoistUrl`, `classifyTodoistUrl`
+  `getProjectIncludingUnjoined`, `parseTodoistUrl`, `classifyTodoistUrl`
 - **`reorder.ts`** — `validateReorderPlacement()` for shared
   `--before` / `--after` / `--position` validation.
 - **`urls.ts`** — `taskUrl`, `projectUrl`, `labelUrl`, `sectionUrl`,
@@ -300,6 +300,15 @@ All live in `src/lib/refs.ts`:
    substring. The ID goes first so a bare ID never resolves to another entity
    whose name contains it. Use for entities with user-facing names.
    Add new wrappers in `refs.ts`; the internal `resolveRef` is private.
+   A read command whose endpoints accept a workspace project the user hasn't
+   joined passes `{ includeUnjoined: true }` to `resolveProjectRef` /
+   `resolveProjectId`, so an ID or URL also reaches that project (`getProject`
+   404s for those; `getProjectIncludingUnjoined` falls back to the full-data
+   endpoint). Check the endpoint first: template export, for one, fails for
+   unjoined projects, so `template export-*` leaves it off. Commands that
+   write leave it off too: they still need membership. Output that names
+   projects from `getProjects()` won't find an unjoined one, so add the
+   resolved project to that map (see `activity`, `completed`).
 2. **ID-only validation** (`lenientIdRef`) — sync, no API call, returns an ID
    string. Tries `id:` prefix → URL → raw ID → error. Use for entities without
    a `fetchAll` endpoint (comments, reminders).

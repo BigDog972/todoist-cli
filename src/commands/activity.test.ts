@@ -8,7 +8,8 @@ vi.mock('../lib/api/core.js', () => ({
 
 import { getCurrentUserId } from '../lib/api/core.js'
 import { setupApiMock } from '../test-support/api-mock.js'
-import { type MockApi } from '../test-support/mock-api.js'
+import { fixtures } from '../test-support/fixtures.js'
+import { type MockApi, mockUnjoinedProject } from '../test-support/mock-api.js'
 import { registerActivityCommand } from './activity.js'
 
 const mockGetCurrentUserId = vi.mocked(getCurrentUserId)
@@ -169,6 +170,47 @@ describe('activity command', () => {
                 parentProjectId: 'proj-1',
             }),
         )
+    })
+
+    it('filters by a workspace project the user has not joined', async () => {
+        mockUnjoinedProject(mockApi, fixtures.projects.unjoined)
+
+        await createProgram().parseAsync(['node', 'td', 'activity', '--project', 'id:unjoined1'])
+
+        expect(mockApi.getActivityLogs).toHaveBeenCalledWith(
+            expect.objectContaining({ parentProjectId: 'unjoined1' }),
+        )
+    })
+
+    it('names the project and initiator of an unjoined workspace project', async () => {
+        mockUnjoinedProject(mockApi, fixtures.projects.unjoined)
+        mockApi.getActivityLogs.mockResolvedValue({
+            results: [
+                {
+                    id: 'event-1',
+                    objectType: 'task',
+                    objectId: 'task-1',
+                    eventType: 'completed',
+                    eventDate: new Date('2025-01-10T14:30:00Z'),
+                    parentProjectId: 'unjoined1',
+                    parentItemId: null,
+                    initiatorId: 'user-1',
+                    extraData: { content: 'Ship it' },
+                },
+            ],
+            nextCursor: null,
+        })
+        mockApi.getWorkspaceUsers.mockResolvedValue({
+            workspaceUsers: [
+                { userId: 'user-1', fullName: 'Alice Smith', userEmail: 'alice@example.com' },
+            ],
+            hasMore: false,
+        })
+
+        await createProgram().parseAsync(['node', 'td', 'activity', '--project', 'id:unjoined1'])
+
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Other Team Backlog'))
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('by Alice S.'))
     })
 
     it('filters by initiator with "me"', async () => {

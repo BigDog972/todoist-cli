@@ -6,7 +6,8 @@ vi.mock('../../lib/api/core.js', () => ({
 }))
 
 import { setupApiMock } from '../../test-support/api-mock.js'
-import { type MockApi } from '../../test-support/mock-api.js'
+import { fixtures } from '../../test-support/fixtures.js'
+import { type MockApi, mockUnjoinedProject } from '../../test-support/mock-api.js'
 import { registerCompletedCommand } from './index.js'
 
 function createProgram() {
@@ -209,6 +210,47 @@ describe('completed command', () => {
                 projectId: 'proj-1',
             }),
         )
+    })
+
+    it('filters by a workspace project the user has not joined', async () => {
+        mockUnjoinedProject(mockApi, fixtures.projects.unjoined)
+        mockApi.getCompletedTasksByCompletionDate.mockResolvedValue({
+            items: [],
+            nextCursor: null,
+        })
+
+        await createProgram().parseAsync(['node', 'td', 'completed', '--project', 'id:unjoined1'])
+
+        expect(mockApi.getCompletedTasksByCompletionDate).toHaveBeenCalledWith(
+            expect.objectContaining({ projectId: 'unjoined1' }),
+        )
+    })
+
+    it('names the project and assignee of an unjoined workspace project', async () => {
+        mockUnjoinedProject(mockApi, fixtures.projects.unjoined)
+        mockApi.getCompletedTasksByCompletionDate.mockResolvedValue({
+            items: [
+                {
+                    id: 'task-1',
+                    content: 'Shipped',
+                    projectId: 'unjoined1',
+                    priority: 1,
+                    responsibleUid: 'user-456',
+                },
+            ],
+            nextCursor: null,
+        })
+        mockApi.getWorkspaceUsers.mockResolvedValue({
+            workspaceUsers: [
+                { userId: 'user-456', fullName: 'Bob Jones', userEmail: 'bob@example.com' },
+            ],
+            hasMore: false,
+        })
+
+        await createProgram().parseAsync(['node', 'td', 'completed', '--project', 'id:unjoined1'])
+
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Other Team Backlog'))
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('+Bob J.'))
     })
 
     it('outputs JSON with --json flag', async () => {
