@@ -1,3 +1,9 @@
+## [7.0.1](https://github.com/todoist/todoist-cli/compare/v7.0.0...v7.0.1) (2026-11-20)
+
+### Bug Fixes
+
+* **deps:** update dependency commander to v15.1.0 ([#660](https://github.com/todoist/todoist-cli/issues/660)) ([678a501](https://github.com/todoist/todoist-cli/commit/678a50169db754471c394a57d66d49afa029395d))
+
 ## [7.0.0](https://github.com/todoist/todoist-cli/compare/v6.2.0...v7.0.0) (2026-11-19)
 
 ### ⚠ BREAKING CHANGES
