@@ -4,7 +4,7 @@ import { matchUserRef, UserNotFoundError } from '../../lib/users.js'
 
 /**
  * Substitute `getRequestedUserRef()` for missing `ref` arguments on
- * `active` / `clear`. `index.ts` strips `--user` from argv before commander
+ * `active` / `activeBundle` / `clear`. `index.ts` strips `--user` from argv before commander
  * runs, so cli-core's registrars (`attachLogoutCommand`,
  * `attachTokenViewCommand`) can't see the flag on their parsed args; this
  * wrap puts the global selector back into play.
@@ -37,12 +37,20 @@ export function withUserRefAware(store: TodoistTokenStore): TodoistTokenStore {
         }
     }
 
+    /**
+     * The account a read acts as: the explicit ref, else `--user`, else
+     * `TD_USER`. Shared by `active` and `activeBundle` (which `auth status`
+     * and `auth token view` read and refresh through) so they can't disagree.
+     */
+    async function readRef(ref?: string): Promise<string | undefined> {
+        const targetRef = ref ?? getRequestedOrEnvUserRef()
+        if (targetRef !== undefined) await requireExists(targetRef)
+        return targetRef
+    }
+
     return Object.assign(Object.create(store) as TodoistTokenStore, {
-        active: async (ref?: string) => {
-            const targetRef = ref ?? getRequestedOrEnvUserRef()
-            if (targetRef !== undefined) await requireExists(targetRef)
-            return store.active(targetRef)
-        },
+        active: async (ref?: string) => store.active(await readRef(ref)),
+        activeBundle: async (ref?: string) => store.activeBundle(await readRef(ref)),
         clear: async (ref?: string) => {
             const targetRef = ref ?? getRequestedUserRef()
             if (targetRef !== undefined) await requireExists(targetRef)

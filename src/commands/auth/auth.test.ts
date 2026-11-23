@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
     type StoreEntry,
     alanGrant,
@@ -5,6 +8,7 @@ import {
     captureConsole,
     captureStream,
     createTestProgram,
+    ellieSattler,
 } from '@todoist/cli-core/testing'
 import { Command } from 'commander'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -49,6 +53,13 @@ vi.mock('../../lib/api/core.js', () => ({
 
 // Mock chalk to avoid colors in tests
 vi.mock('chalk')
+
+// The token endpoint a refresh posts to.
+const fetchTodoistMock = vi.hoisted(() => vi.fn())
+vi.mock('../../lib/usage-tracking.js', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../lib/usage-tracking.js')>()),
+    fetchTodoist: fetchTodoistMock,
+}))
 
 // Mock cli-core's login registrar so the login subcommand never actually
 // drives the OAuth flow. The original todoist-local OAuth tests were dropped
@@ -325,6 +336,60 @@ describe('auth command', () => {
             expect(consoleSpy).toHaveBeenCalledWith(`  Email: ${TEST_USER.email}`)
             expect(consoleSpy).toHaveBeenCalledWith(`  Name:  ${TEST_USER.fullName}`)
             expect(consoleSpy).toHaveBeenCalledWith('  Mode:  read-write')
+        })
+
+        it('refreshes only the --user account, never an expiring default', async () => {
+            const configHome = await mkdtemp(join(tmpdir(), 'td-auth-status-'))
+            await mkdir(join(configHome, 'todoist-cli'))
+            vi.stubEnv('XDG_CONFIG_HOME', configHome)
+            useStore({
+                entries: [
+                    {
+                        account: ellieSattler as TodoistAccount,
+                        isDefault: true,
+                        bundle: {
+                            accessToken: 'ellie-old-access',
+                            refreshToken: 'ellie-revoked-refresh',
+                            accessTokenExpiresAt: Date.now() + 30_000,
+                        },
+                    },
+                    {
+                        account: alanGrant as TodoistAccount,
+                        isDefault: false,
+                        token: 'alan-token',
+                    },
+                ],
+            })
+            fetchTodoistMock.mockResolvedValue(
+                new Response(JSON.stringify({ error: 'invalid_grant' }), {
+                    status: 400,
+                    headers: { 'Content-Type': 'application/json' },
+                }),
+            )
+            const alan = { id: alanGrant.id, email: alanGrant.email, fullName: 'Alan Grant' }
+            mockGetApi.mockResolvedValue(
+                createMockApi({ getUser: vi.fn().mockResolvedValue(alan) }),
+            )
+            mockGetAuthMetadata.mockResolvedValue({
+                authMode: 'read-write',
+                source: 'secure-store',
+            })
+
+            const program = createProgram()
+            const originalArgv = process.argv
+            process.argv = ['node', 'td', '--user', alanGrant.email, 'auth', 'status']
+            resetGlobalArgs()
+            try {
+                await program.parseAsync(['node', 'td', 'auth', 'status'])
+            } finally {
+                process.argv = originalArgv
+                resetGlobalArgs()
+                vi.unstubAllEnvs()
+                await rm(configHome, { recursive: true, force: true })
+            }
+
+            expect(fetchTodoistMock).not.toHaveBeenCalled()
+            expect(consoleSpy).toHaveBeenCalledWith(`  Email: ${alanGrant.email}`)
         })
 
         it('marks the active user as default when matching', async () => {
@@ -681,6 +746,66 @@ describe('auth command', () => {
             } finally {
                 process.argv = originalArgv
                 resetGlobalArgs()
+            }
+        })
+
+        it("refreshes the --user account's expiring token before printing it", async () => {
+            // The refresh lock lives next to the config file.
+            const configHome = await mkdtemp(join(tmpdir(), 'td-auth-token-view-'))
+            await mkdir(join(configHome, 'todoist-cli'))
+            vi.stubEnv('XDG_CONFIG_HOME', configHome)
+            const { harness } = useStore({
+                entries: [
+                    {
+                        account: ellieSattler as TodoistAccount,
+                        isDefault: true,
+                        token: 'ellie-token',
+                    },
+                    {
+                        account: alanGrant as TodoistAccount,
+                        isDefault: false,
+                        bundle: {
+                            accessToken: 'alan-old-access',
+                            refreshToken: 'alan-old-refresh',
+                            accessTokenExpiresAt: Date.now() + 30_000,
+                        },
+                    },
+                ],
+            })
+            fetchTodoistMock.mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        access_token: 'alan-new-access',
+                        refresh_token: 'alan-new-refresh',
+                        token_type: 'Bearer',
+                        expires_in: 3600,
+                    }),
+                    { status: 200, headers: { 'Content-Type': 'application/json' } },
+                ),
+            )
+
+            const program = createProgram()
+            const stdoutWrite = captureStream()
+            const originalArgv = process.argv
+            process.argv = ['node', 'td', '--user', alanGrant.email, 'auth', 'token', 'view']
+            resetGlobalArgs()
+            try {
+                await program.parseAsync(['node', 'td', 'auth', 'token', 'view'])
+                expect(stdoutWrite).toHaveBeenCalledWith('alan-new-access')
+                expect(harness.state.setBundleCalls).toEqual([
+                    expect.objectContaining({
+                        account: expect.objectContaining({ id: alanGrant.id }),
+                        bundle: expect.objectContaining({
+                            accessToken: 'alan-new-access',
+                            refreshToken: 'alan-new-refresh',
+                        }),
+                    }),
+                ])
+            } finally {
+                process.argv = originalArgv
+                resetGlobalArgs()
+                vi.unstubAllEnvs()
+                await rm(configHome, { recursive: true, force: true })
             }
         })
 
