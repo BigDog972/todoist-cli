@@ -467,6 +467,9 @@ describe('lib/auth', () => {
                         refresh_token: 'old-refresh',
                         access_token_expires_at: Date.now() + 30_000,
                         has_refresh_token: true,
+                        // Whatever client the CLI signs in as now, a refresh
+                        // goes to the one the token was issued to.
+                        oauth_client_id: 'https://example.com/issuing-client',
                     }),
                 ],
             })
@@ -490,12 +493,14 @@ describe('lib/auth', () => {
             expect(Object.fromEntries(new URLSearchParams(String(init.body)))).toMatchObject({
                 grant_type: 'refresh_token',
                 refresh_token: 'old-refresh',
-                client_id: '04863cc1e3584830a578622f50224d5b',
+                client_id: 'https://example.com/issuing-client',
             })
             expect(persistedUser()).toMatchObject({
                 api_token: 'new-access',
                 refresh_token: 'new-refresh',
                 has_refresh_token: true,
+                // Kept for the next refresh, which has to go to the same client.
+                oauth_client_id: 'https://example.com/issuing-client',
             })
             const expiresAt = persistedUser().access_token_expires_at as number
             expect(expiresAt).toBeGreaterThanOrEqual(before + 3_600_000)
