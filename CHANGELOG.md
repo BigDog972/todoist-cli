@@ -1,3 +1,9 @@
+## [7.3.0](https://github.com/todoist/todoist-cli/compare/v7.2.0...v7.3.0) (2026-11-23)
+
+### Features
+
+* **auth:** refresh expiring OAuth access tokens ([#677](https://github.com/todoist/todoist-cli/issues/677)) ([f21d545](https://github.com/todoist/todoist-cli/commit/f21d5453c7231d683185a45e858cc3a55954c84e))
+
 ## [7.2.0](https://github.com/todoist/todoist-cli/compare/v7.1.3...v7.2.0) (2026-11-23)
 
 ### Features
