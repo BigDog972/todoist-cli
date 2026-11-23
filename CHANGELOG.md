@@ -1,3 +1,9 @@
+## [7.2.0](https://github.com/todoist/todoist-cli/compare/v7.1.3...v7.2.0) (2026-11-23)
+
+### Features
+
+* **project:** set, change and reset project icons ([#670](https://github.com/todoist/todoist-cli/issues/670)) ([a344bba](https://github.com/todoist/todoist-cli/commit/a344bba07eb1ebbb38d3901011bf1f8b91c5834a))
+
 ## [7.1.3](https://github.com/todoist/todoist-cli/compare/v7.1.2...v7.1.3) (2026-11-23)
 
 ### Bug Fixes
