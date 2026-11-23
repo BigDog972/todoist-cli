@@ -1,3 +1,9 @@
+## [7.4.0](https://github.com/todoist/todoist-cli/compare/v7.3.1...v7.4.0) (2026-11-23)
+
+### Features
+
+* **auth:** sign in with the Todoist CLI's client ID metadata document ([#678](https://github.com/todoist/todoist-cli/issues/678)) ([033d456](https://github.com/todoist/todoist-cli/commit/033d456f629749a33519ae1f53d4301f24e71d56))
+
 ## [7.3.1](https://github.com/todoist/todoist-cli/compare/v7.3.0...v7.3.1) (2026-11-23)
 
 ### Bug Fixes
