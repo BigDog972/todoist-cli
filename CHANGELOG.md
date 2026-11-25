@@ -1,3 +1,9 @@
+## [7.5.0](https://github.com/todoist/todoist-cli/compare/v7.4.3...v7.5.0) (2026-11-25)
+
+### Features
+
+* **apps:** add td apps reset-secret to rotate an app's client secret ([#685](https://github.com/todoist/todoist-cli/issues/685)) ([98c7814](https://github.com/todoist/todoist-cli/commit/98c7814fd87b609ca322927c8fe3ebce5f48621d))
+
 ## [7.4.3](https://github.com/todoist/todoist-cli/compare/v7.4.2...v7.4.3) (2026-11-25)
 
 ### Bug Fixes
