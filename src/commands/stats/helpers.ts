@@ -1,5 +1,6 @@
 import { DAY_OF_WEEK_TO_API, type ProductivityStats } from '@todoist/sdk'
 import chalk from 'chalk'
+import { getLocalDate } from '../../lib/dates.js'
 
 type Streak = ProductivityStats['goals']['currentDailyStreak']
 
@@ -29,7 +30,7 @@ export function formatGoalProgress(completed: number, goal: number, label: strin
 }
 
 export function getTodayCompleted(stats: ProductivityStats): number {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = getLocalDate(0)
     const todayItem = stats.daysItems.find((d) => d.date === today)
     return todayItem?.totalCompleted ?? 0
 }

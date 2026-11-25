@@ -64,6 +64,34 @@ describe('stats view', () => {
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Completed:'))
     })
 
+    it("counts today's completions on the local date in the evening west of UTC", async () => {
+        const originalTz = process.env.TZ
+        process.env.TZ = 'America/Chicago'
+        // 7 PM on 24 November in Chicago, already 25 November in UTC.
+        vi.useFakeTimers({ toFake: ['Date'] })
+        vi.setSystemTime(new Date('2026-11-25T01:00:00Z'))
+        try {
+            const program = createProgram()
+            const consoleSpy = captureConsole()
+
+            mockFetchProductivityStats.mockResolvedValue({
+                ...defaultStats,
+                daysItems: [{ date: '2026-11-24', totalCompleted: 3, items: [] }],
+            })
+
+            await program.parseAsync(['node', 'td', 'stats'])
+
+            expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('3/5 today'))
+        } finally {
+            vi.useRealTimers()
+            if (originalTz === undefined) {
+                delete process.env.TZ
+            } else {
+                process.env.TZ = originalTz
+            }
+        }
+    })
+
     it('shows vacation mode warning when enabled', async () => {
         const program = createProgram()
         const consoleSpy = captureConsole()
