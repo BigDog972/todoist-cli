@@ -1,3 +1,10 @@
+## [7.4.3](https://github.com/todoist/todoist-cli/compare/v7.4.2...v7.4.3) (2026-11-25)
+
+### Bug Fixes
+
+* **deps:** update @todoist/sdk to 24.1.3 ([#684](https://github.com/todoist/todoist-cli/issues/684)) ([49d6edf](https://github.com/todoist/todoist-cli/commit/49d6edfb5c6aa6e59d549d212679b9e035855896)), closes [todoist/todoist-sdk-typescript#788](https://github.com/todoist/todoist-sdk-typescript/issues/788) [todoist/todoist-sdk-typescript#789](https://github.com/todoist/todoist-sdk-typescript/issues/789) [todoist/todoist-sdk-typescript#790](https://github.com/todoist/todoist-sdk-typescript/issues/790) [#204](https://github.com/todoist/todoist-cli/issues/204)
+* **deps:** update dependency @todoist/sdk to v24.1.3 ([#683](https://github.com/todoist/todoist-cli/issues/683)) ([0a4f92b](https://github.com/todoist/todoist-cli/commit/0a4f92bc02e51ff6152b4b5cbc605da56d3c5af5))
+
 ## [7.4.2](https://github.com/todoist/todoist-cli/compare/v7.4.1...v7.4.2) (2026-11-25)
 
 ### Bug Fixes
