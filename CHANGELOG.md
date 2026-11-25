@@ -1,3 +1,9 @@
+## [7.4.2](https://github.com/todoist/todoist-cli/compare/v7.4.1...v7.4.2) (2026-11-25)
+
+### Bug Fixes
+
+* **deps:** update dependency @todoist/cli-core to v2.0.2 ([#682](https://github.com/todoist/todoist-cli/issues/682)) ([7cede79](https://github.com/todoist/todoist-cli/commit/7cede79faf56a66614bcbc21da52783ee09746ea))
+
 ## [7.4.1](https://github.com/todoist/todoist-cli/compare/v7.4.0...v7.4.1) (2026-11-24)
 
 ### Bug Fixes
