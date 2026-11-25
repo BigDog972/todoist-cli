@@ -180,8 +180,10 @@ export function registerActivityCommand(program: Command): void {
                             ? (`${options.type ?? ''}:${options.event ?? ''}` as ActivityObjectEventType)
                             : undefined
                     const resp = await api.getActivityLogs({
-                        dateFrom: options.since ? new Date(options.since) : undefined,
-                        dateTo: options.until ? new Date(options.until) : undefined,
+                        // Pass the day as typed. `new Date('2025-01-01')` is UTC midnight, which
+                        // the SDK sends as the local day before anywhere west of UTC.
+                        dateFrom: options.since,
+                        dateTo: options.until,
                         objectEventTypes,
                         parentProjectId: projectId,
                         initiatorId,
