@@ -1,3 +1,9 @@
+## [7.5.1](https://github.com/todoist/todoist-cli/compare/v7.5.0...v7.5.1) (2026-11-26)
+
+### Bug Fixes
+
+* **deps:** update dependency oauth4webapi to v3.8.9 ([#686](https://github.com/todoist/todoist-cli/issues/686)) ([dc0451c](https://github.com/todoist/todoist-cli/commit/dc0451c46eec2f8f405c89b91369d18ecf55e861))
+
 ## [7.5.0](https://github.com/todoist/todoist-cli/compare/v7.4.3...v7.5.0) (2026-11-25)
 
 ### Features
