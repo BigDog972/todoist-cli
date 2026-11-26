@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
+    formatDateInTimezone,
     formatDateHeader,
     getLocalDate,
     isDueBefore,
@@ -404,5 +405,20 @@ describe('parseLocalDate never refuses a real calendar day, in any time zone', (
     it('resolves a repeated autumn hour to its first occurrence', () => {
         process.env.TZ = 'America/New_York'
         expect(parseLocalDate('2026-11-01T01:30')?.toISOString()).toBe('2026-11-01T05:30:00.000Z')
+    })
+})
+
+describe('formatDateInTimezone', () => {
+    // 02:00 UTC on 9 January is still 8 PM on the 8th in Chicago.
+    const instant = new Date('2026-01-09T02:00:00Z')
+
+    it('gives the day the instant falls on in the given time zone', () => {
+        expect(formatDateInTimezone(instant, 'America/Chicago')).toBe('2026-01-08')
+        expect(formatDateInTimezone(instant, 'Asia/Tokyo')).toBe('2026-01-09')
+    })
+
+    it("uses the machine's time zone when none is given", () => {
+        // The test run pins the machine's time zone to UTC.
+        expect(formatDateInTimezone(instant)).toBe('2026-01-09')
     })
 })

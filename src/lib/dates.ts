@@ -9,6 +9,22 @@ export function getLocalDate(daysOffset = 0): string {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+/**
+ * The calendar day an instant falls on in `timeZone` (an IANA name), as `YYYY-MM-DD`.
+ * Without a time zone, the machine's is used.
+ */
+export function formatDateInTimezone(date: Date, timeZone?: string): string {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(date)
+    const part = (type: Intl.DateTimeFormatPartTypes) =>
+        parts.find((p) => p.type === type)?.value ?? ''
+    return `${part('year')}-${part('month')}-${part('day')}`
+}
+
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /**
