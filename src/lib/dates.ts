@@ -9,17 +9,40 @@ export function getLocalDate(daysOffset = 0): string {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+// A Todoist account can use a fixed offset named like `GMT -6:00` or `GMT +5:30`. `Intl`
+// rejects that name, but accepts the same offset written as `-06:00`.
+const TODOIST_FIXED_OFFSET = /^GMT ([+-])(\d{1,2}):(\d{2})$/
+
+function toIntlTimeZone(timeZone: string): string {
+    const match = TODOIST_FIXED_OFFSET.exec(timeZone)
+    if (!match) return timeZone
+    const [, sign, hours, minutes] = match
+    return `${sign}${hours.padStart(2, '0')}:${minutes}`
+}
+
+function dayFormatter(timeZone: string | undefined): Intl.DateTimeFormat {
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit' } as const
+    if (timeZone) {
+        try {
+            return new Intl.DateTimeFormat('en-US', {
+                ...options,
+                timeZone: toIntlTimeZone(timeZone),
+            })
+        } catch (error) {
+            // A name `Intl` does not know falls back to the machine's time zone.
+            if (!(error instanceof RangeError)) throw error
+        }
+    }
+    return new Intl.DateTimeFormat('en-US', options)
+}
+
 /**
- * The calendar day an instant falls on in `timeZone` (an IANA name), as `YYYY-MM-DD`.
- * Without a time zone, the machine's is used.
+ * The calendar day an instant falls on in `timeZone`, as `YYYY-MM-DD`. Takes an IANA name or a
+ * Todoist fixed offset such as `GMT -6:00`. Without a time zone, or with one `Intl` does not
+ * know, the machine's is used.
  */
 export function formatDateInTimezone(date: Date, timeZone?: string): string {
-    const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    }).formatToParts(date)
+    const parts = dayFormatter(timeZone).formatToParts(date)
     const part = (type: Intl.DateTimeFormatPartTypes) =>
         parts.find((p) => p.type === type)?.value ?? ''
     return `${part('year')}-${part('month')}-${part('day')}`

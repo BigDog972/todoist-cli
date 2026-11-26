@@ -421,4 +421,17 @@ describe('formatDateInTimezone', () => {
         // The test run pins the machine's time zone to UTC.
         expect(formatDateInTimezone(instant)).toBe('2026-01-09')
     })
+
+    it('reads a Todoist fixed-offset time zone such as GMT -6:00', () => {
+        expect(formatDateInTimezone(instant, 'GMT -6:00')).toBe('2026-01-08')
+        // 19:00 UTC on 8 January is already 00:30 on the 9th at +5:30.
+        expect(formatDateInTimezone(new Date('2026-01-08T19:00:00Z'), 'GMT +5:30')).toBe(
+            '2026-01-09',
+        )
+    })
+
+    it("uses the machine's time zone for a name it does not know", () => {
+        // The test run pins the machine's time zone to UTC.
+        expect(formatDateInTimezone(instant, 'Mars/Olympus_Mons')).toBe('2026-01-09')
+    })
 })
