@@ -1,3 +1,10 @@
+## [7.5.3](https://github.com/todoist/todoist-cli/compare/v7.5.2...v7.5.3) (2026-11-26)
+
+### Bug Fixes
+
+* **activity:** ask for the days typed in --since and --until ([#687](https://github.com/todoist/todoist-cli/issues/687)) ([7afda63](https://github.com/todoist/todoist-cli/commit/7afda631d772f7a301635993018e5ad73ff0b8aa))
+* **stats:** count today's completions on the account's day ([#688](https://github.com/todoist/todoist-cli/issues/688)) ([60b8d2d](https://github.com/todoist/todoist-cli/commit/60b8d2da0035f6931dc72f07153dc70e3adf78c0))
+
 ## [7.5.2](https://github.com/todoist/todoist-cli/compare/v7.5.1...v7.5.2) (2026-11-26)
 
 ### Bug Fixes
