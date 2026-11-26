@@ -189,6 +189,22 @@ describe('activity command', () => {
         }
     })
 
+    it.each([
+        ['a written-out date', ['--since', 'Jan 1 2025'], 'Invalid --since date: "Jan 1 2025"'],
+        ['an unpadded date', ['--since', '2025-1-5'], 'Invalid --since date: "2025-1-5"'],
+        ['an impossible date', ['--until', '2025-02-30'], 'Invalid --until date: "2025-02-30"'],
+        [
+            'a date and time',
+            ['--until', '2025-01-10T09:00'],
+            'Invalid --until date: "2025-01-10T09:00"',
+        ],
+    ])('rejects %s before calling the API', async (_, flags, message) => {
+        await expect(
+            createProgram().parseAsync(['node', 'td', 'activity', ...flags]),
+        ).rejects.toMatchObject({ code: 'INVALID_DATE', message })
+        expect(mockApi.getActivityLogs).not.toHaveBeenCalled()
+    })
+
     it('filters by project', async () => {
         const program = createProgram()
 

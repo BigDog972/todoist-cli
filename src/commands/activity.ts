@@ -10,6 +10,7 @@ import { Command, Option } from 'commander'
 import { getApi, getCurrentUserId, type Project } from '../lib/api/core.js'
 import { withCaseInsensitiveChoices } from '../lib/completion.js'
 import { CURSOR_DESCRIPTION } from '../lib/constants.js'
+import { parseDateOption } from '../lib/dates.js'
 import type { Pagination } from '../lib/options.js'
 import { formatPaginatedJson, formatPaginatedNdjson } from '../lib/output.js'
 import { paginate } from '../lib/pagination.js'
@@ -152,6 +153,9 @@ export function registerActivityCommand(program: Command): void {
         .option('--full', 'Include all fields in JSON output')
         .action(async (options: ActivityOptions) => {
             const outputMode = resolveOutputMode(options)
+
+            if (options.since) parseDateOption(options.since, '--since')
+            if (options.until) parseDateOption(options.until, '--until')
 
             const api = await getApi()
 
