@@ -1,3 +1,9 @@
+## [7.5.5](https://github.com/todoist/todoist-cli/compare/v7.5.4...v7.5.5) (2026-11-26)
+
+### Bug Fixes
+
+* **comment:** date listed comments by the account's day ([#692](https://github.com/todoist/todoist-cli/issues/692)) ([2e6815b](https://github.com/todoist/todoist-cli/commit/2e6815b4a6d65feaea69bed10da2749c1003a103))
+
 ## [7.5.4](https://github.com/todoist/todoist-cli/compare/v7.5.3...v7.5.4) (2026-11-26)
 
 ### Bug Fixes
