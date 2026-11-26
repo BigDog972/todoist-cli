@@ -1,3 +1,9 @@
+## [7.5.2](https://github.com/todoist/todoist-cli/compare/v7.5.1...v7.5.2) (2026-11-26)
+
+### Bug Fixes
+
+* **deps:** update dependency @todoist/sdk to v24.1.4 ([#689](https://github.com/todoist/todoist-cli/issues/689)) ([d907e92](https://github.com/todoist/todoist-cli/commit/d907e929ca0d91ee84fc34d8c117cd782438424b))
+
 ## [7.5.1](https://github.com/todoist/todoist-cli/compare/v7.5.0...v7.5.1) (2026-11-26)
 
 ### Bug Fixes
