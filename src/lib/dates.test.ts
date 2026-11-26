@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
+    formatDateInTimezone,
     formatDateHeader,
     getLocalDate,
     isDueBefore,
@@ -404,5 +405,33 @@ describe('parseLocalDate never refuses a real calendar day, in any time zone', (
     it('resolves a repeated autumn hour to its first occurrence', () => {
         process.env.TZ = 'America/New_York'
         expect(parseLocalDate('2026-11-01T01:30')?.toISOString()).toBe('2026-11-01T05:30:00.000Z')
+    })
+})
+
+describe('formatDateInTimezone', () => {
+    // 02:00 UTC on 9 January is still 8 PM on the 8th in Chicago.
+    const instant = new Date('2026-01-09T02:00:00Z')
+
+    it('gives the day the instant falls on in the given time zone', () => {
+        expect(formatDateInTimezone(instant, 'America/Chicago')).toBe('2026-01-08')
+        expect(formatDateInTimezone(instant, 'Asia/Tokyo')).toBe('2026-01-09')
+    })
+
+    it("uses the machine's time zone when none is given", () => {
+        // The test run pins the machine's time zone to UTC.
+        expect(formatDateInTimezone(instant)).toBe('2026-01-09')
+    })
+
+    it('reads a Todoist fixed-offset time zone such as GMT -6:00', () => {
+        expect(formatDateInTimezone(instant, 'GMT -6:00')).toBe('2026-01-08')
+        // 19:00 UTC on 8 January is already 00:30 on the 9th at +5:30.
+        expect(formatDateInTimezone(new Date('2026-01-08T19:00:00Z'), 'GMT +5:30')).toBe(
+            '2026-01-09',
+        )
+    })
+
+    it("uses the machine's time zone for a name it does not know", () => {
+        // The test run pins the machine's time zone to UTC.
+        expect(formatDateInTimezone(instant, 'Mars/Olympus_Mons')).toBe('2026-01-09')
     })
 })

@@ -12,9 +12,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 vi.mock('../../lib/api/core.js', () => ({
     getApi: vi.fn(),
     getCurrentUserId: vi.fn(async () => CURRENT_USER_ID),
+    getAccountTimezone: vi.fn(async () => 'America/Chicago'),
 }))
 
-import { getApi } from '../../lib/api/core.js'
+import { getAccountTimezone, getApi } from '../../lib/api/core.js'
 import { setupApiMock } from '../../test-support/api-mock.js'
 import { fixtures } from '../../test-support/fixtures.js'
 import { type MockApi, mockUnjoinedProject } from '../../test-support/mock-api.js'
@@ -95,6 +96,60 @@ describe('comment list', () => {
         )
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Remember organic'))
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Got it'))
+    })
+
+    it("dates each comment by the account's day, not the UTC day", async () => {
+        // Posted at 8 PM on 8 January in Chicago, which is already 02:00 on the 9th in UTC.
+        const program = createProgram()
+        const consoleSpy = captureConsole()
+
+        mockApi.getTask.mockResolvedValue({ id: 'task-1', content: 'Buy milk' })
+        mockApi.getComments.mockResolvedValue({
+            results: [
+                {
+                    id: 'comment-1',
+                    content: 'Evening note',
+                    postedAt: new Date('2026-01-09T02:00:00Z'),
+                    fileAttachment: null,
+                },
+            ],
+            nextCursor: null,
+        })
+
+        await program.parseAsync(['node', 'td', 'comment', 'list', 'id:task-1'])
+
+        const header = consoleSpy.mock.calls
+            .map((call) => String(call[0]))
+            .find((line) => line.includes('comment-1'))
+        expect(header).toContain('2026-01-08')
+        expect(header).not.toContain('2026-01-09')
+    })
+
+    it('dates each comment by an account on a fixed offset such as GMT -6:00', async () => {
+        // Todoist accounts can use a fixed offset, a name `Intl` does not accept as it is.
+        vi.mocked(getAccountTimezone).mockResolvedValueOnce('GMT -6:00')
+        const program = createProgram()
+        const consoleSpy = captureConsole()
+
+        mockApi.getTask.mockResolvedValue({ id: 'task-1', content: 'Buy milk' })
+        mockApi.getComments.mockResolvedValue({
+            results: [
+                {
+                    id: 'comment-1',
+                    content: 'Evening note',
+                    postedAt: new Date('2026-01-09T02:00:00Z'),
+                    fileAttachment: null,
+                },
+            ],
+            nextCursor: null,
+        })
+
+        await program.parseAsync(['node', 'td', 'comment', 'list', 'id:task-1'])
+
+        const header = consoleSpy.mock.calls
+            .map((call) => String(call[0]))
+            .find((line) => line.includes('comment-1'))
+        expect(header).toContain('2026-01-08')
     })
 
     it('shows "No comments" when empty', async () => {
