@@ -1,6 +1,5 @@
 import { DAY_OF_WEEK_TO_API, type ProductivityStats } from '@todoist/sdk'
 import chalk from 'chalk'
-import { getLocalDate } from '../../lib/dates.js'
 
 type Streak = ProductivityStats['goals']['currentDailyStreak']
 
@@ -30,9 +29,10 @@ export function formatGoalProgress(completed: number, goal: number, label: strin
 }
 
 export function getTodayCompleted(stats: ProductivityStats): number {
-    const today = getLocalDate(0)
-    const todayItem = stats.daysItems.find((d) => d.date === today)
-    return todayItem?.totalCompleted ?? 0
+    // The API lists `daysItems` newest first, starting with today in the account's time zone,
+    // which need not be the machine's.
+    if (stats.daysItems.length === 0) return 0
+    return stats.daysItems[0].totalCompleted
 }
 
 export function getThisWeekCompleted(stats: ProductivityStats): number {

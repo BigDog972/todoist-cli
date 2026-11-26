@@ -64,10 +64,10 @@ describe('stats view', () => {
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Completed:'))
     })
 
-    it("counts today's completions on the local date in the evening west of UTC", async () => {
-        const originalTz = process.env.TZ
-        process.env.TZ = 'America/Chicago'
-        // 7 PM on 24 November in Chicago, already 25 November in UTC.
+    it("counts today's completions from the account's day when the machine's date differs", async () => {
+        // The API lists `daysItems` newest first, starting with today in the account's
+        // time zone. Here the account (in Chicago, at 7 PM) is still on 24 November while
+        // the machine's clock (in UTC) is already on the 25th.
         vi.useFakeTimers({ toFake: ['Date'] })
         vi.setSystemTime(new Date('2026-11-25T01:00:00Z'))
         try {
@@ -76,7 +76,10 @@ describe('stats view', () => {
 
             mockFetchProductivityStats.mockResolvedValue({
                 ...defaultStats,
-                daysItems: [{ date: '2026-11-24', totalCompleted: 3, items: [] }],
+                daysItems: [
+                    { date: '2026-11-24', totalCompleted: 3, items: [] },
+                    { date: '2026-11-23', totalCompleted: 7, items: [] },
+                ],
             })
 
             await program.parseAsync(['node', 'td', 'stats'])
@@ -84,11 +87,6 @@ describe('stats view', () => {
             expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('3/5 today'))
         } finally {
             vi.useRealTimers()
-            if (originalTz === undefined) {
-                delete process.env.TZ
-            } else {
-                process.env.TZ = originalTz
-            }
         }
     })
 
