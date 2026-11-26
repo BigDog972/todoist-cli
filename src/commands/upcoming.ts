@@ -4,7 +4,7 @@ import { Command } from 'commander'
 import { getApi, type Task } from '../lib/api/core.js'
 import { CollaboratorCache, formatAssignee } from '../lib/collaborators.js'
 import { CURSOR_DESCRIPTION } from '../lib/constants.js'
-import { formatDateHeader, getLocalDate, isDueBefore } from '../lib/dates.js'
+import { formatDateHeader, getLocalDate, isDueBefore, parseDueDateToDay } from '../lib/dates.js'
 import type { PaginatedViewOptions } from '../lib/options.js'
 import {
     formatNextCursorFooter,
@@ -118,9 +118,12 @@ export async function showUpcoming(
         if (isDueBefore(dueDate, today)) {
             overdue.push(task)
         } else {
-            const list = byDate.get(dueDate) || []
+            // Group by day: a due date with a time ("2026-11-27T09:00:00") is on the same
+            // day as one without.
+            const day = parseDueDateToDay(dueDate).toISOString().slice(0, 10)
+            const list = byDate.get(day) || []
             list.push(task)
-            byDate.set(dueDate, list)
+            byDate.set(day, list)
         }
     }
 

@@ -256,6 +256,46 @@ describe('upcoming command', () => {
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Today (2)'))
     })
 
+    it('groups tasks with different times on the same day under one heading', async () => {
+        const program = createProgram()
+        const tomorrow = getDateOffset(1)
+
+        mockApi.getTasksByFilter.mockResolvedValue({
+            results: [
+                {
+                    id: 'task-1',
+                    content: 'All-day task',
+                    projectId: 'proj-1',
+                    due: { date: tomorrow },
+                },
+                {
+                    id: 'task-2',
+                    content: 'Morning task',
+                    projectId: 'proj-1',
+                    due: { date: `${tomorrow}T09:00:00` },
+                },
+                {
+                    id: 'task-3',
+                    content: 'Evening task',
+                    projectId: 'proj-1',
+                    due: { date: `${tomorrow}T18:00:00` },
+                },
+            ],
+            nextCursor: null,
+        })
+        mockApi.getProjects.mockResolvedValue({
+            results: [{ id: 'proj-1', name: 'Work' }],
+            nextCursor: null,
+        })
+
+        await program.parseAsync(['node', 'td', 'upcoming'])
+
+        const headings = consoleSpy.mock.calls
+            .map((call: unknown[]) => String(call[0]))
+            .filter((line: string) => line.startsWith('Tomorrow'))
+        expect(headings).toEqual(['Tomorrow (3)'])
+    })
+
     it('rejects invalid days argument', async () => {
         const program = createProgram()
         const errorSpy = captureConsole('error')
