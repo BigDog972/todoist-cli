@@ -158,6 +158,26 @@ describe('completed command', () => {
         expect(mockApi.getCompletedTasksByCompletionDate).not.toHaveBeenCalled()
     })
 
+    it('rejects dates not written as YYYY-MM-DD', async () => {
+        const program = createProgram()
+
+        await expect(
+            program.parseAsync([
+                'node',
+                'td',
+                'completed',
+                '--since',
+                '2026-08-01',
+                '--until',
+                '2026/08/07',
+            ]),
+        ).rejects.toMatchObject({
+            code: 'INVALID_DATE',
+            message: 'Invalid --until date: "2026/08/07"',
+        })
+        expect(mockApi.getCompletedTasksByCompletionDate).not.toHaveBeenCalled()
+    })
+
     it('rejects ranges where until is not later than since', async () => {
         const program = createProgram()
 

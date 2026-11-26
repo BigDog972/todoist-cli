@@ -10,6 +10,7 @@ import { Command, Option } from 'commander'
 import { getApi, getCurrentUserId, type Project } from '../lib/api/core.js'
 import { withCaseInsensitiveChoices } from '../lib/completion.js'
 import { CURSOR_DESCRIPTION } from '../lib/constants.js'
+import { parseDateOption } from '../lib/dates.js'
 import type { Pagination } from '../lib/options.js'
 import { formatPaginatedJson, formatPaginatedNdjson } from '../lib/output.js'
 import { paginate } from '../lib/pagination.js'
@@ -153,6 +154,9 @@ export function registerActivityCommand(program: Command): void {
         .action(async (options: ActivityOptions) => {
             const outputMode = resolveOutputMode(options)
 
+            if (options.since) parseDateOption(options.since, '--since')
+            if (options.until) parseDateOption(options.until, '--until')
+
             const api = await getApi()
 
             const project = options.project
@@ -180,8 +184,10 @@ export function registerActivityCommand(program: Command): void {
                             ? (`${options.type ?? ''}:${options.event ?? ''}` as ActivityObjectEventType)
                             : undefined
                     const resp = await api.getActivityLogs({
-                        dateFrom: options.since ? new Date(options.since) : undefined,
-                        dateTo: options.until ? new Date(options.until) : undefined,
+                        // Pass the day as typed. `new Date('2025-01-01')` is UTC midnight, which
+                        // the SDK sends as the local day before anywhere west of UTC.
+                        dateFrom: options.since,
+                        dateTo: options.until,
                         objectEventTypes,
                         parentProjectId: projectId,
                         initiatorId,

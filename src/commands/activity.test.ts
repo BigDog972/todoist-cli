@@ -149,10 +149,60 @@ describe('activity command', () => {
 
         expect(mockApi.getActivityLogs).toHaveBeenCalledWith(
             expect.objectContaining({
-                dateFrom: new Date('2025-01-01'),
-                dateTo: new Date('2025-01-10'),
+                dateFrom: '2025-01-01',
+                dateTo: '2025-01-10',
             }),
         )
+    })
+
+    it('asks for the days typed when the clock is west of UTC', async () => {
+        // The SDK sends a Date as its calendar day in the local timezone, and a
+        // YYYY-MM-DD string as it is.
+        const dayTheSdkSends = (value: unknown) =>
+            value instanceof Date
+                ? `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
+                : value
+        const originalTz = process.env.TZ
+        process.env.TZ = 'America/Chicago'
+        try {
+            await createProgram().parseAsync([
+                'node',
+                'td',
+                'activity',
+                '--since',
+                '2025-01-01',
+                '--until',
+                '2025-01-10',
+            ])
+
+            const [args] = mockApi.getActivityLogs.mock.calls[0]
+            expect({
+                dateFrom: dayTheSdkSends(args.dateFrom),
+                dateTo: dayTheSdkSends(args.dateTo),
+            }).toEqual({ dateFrom: '2025-01-01', dateTo: '2025-01-10' })
+        } finally {
+            if (originalTz === undefined) {
+                delete process.env.TZ
+            } else {
+                process.env.TZ = originalTz
+            }
+        }
+    })
+
+    it.each([
+        ['a written-out date', ['--since', 'Jan 1 2025'], 'Invalid --since date: "Jan 1 2025"'],
+        ['an unpadded date', ['--since', '2025-1-5'], 'Invalid --since date: "2025-1-5"'],
+        ['an impossible date', ['--until', '2025-02-30'], 'Invalid --until date: "2025-02-30"'],
+        [
+            'a date and time',
+            ['--until', '2025-01-10T09:00'],
+            'Invalid --until date: "2025-01-10T09:00"',
+        ],
+    ])('rejects %s before calling the API', async (_, flags, message) => {
+        await expect(
+            createProgram().parseAsync(['node', 'td', 'activity', ...flags]),
+        ).rejects.toMatchObject({ code: 'INVALID_DATE', message })
+        expect(mockApi.getActivityLogs).not.toHaveBeenCalled()
     })
 
     it('filters by project', async () => {

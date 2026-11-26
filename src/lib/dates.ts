@@ -1,11 +1,46 @@
 import { isBefore } from 'date-fns/isBefore'
 import { isEqual } from 'date-fns/isEqual'
 import { parseISO } from 'date-fns/parseISO'
+import { CliError } from './errors.js'
 
 export function getLocalDate(daysOffset = 0): string {
     const date = new Date()
     date.setDate(date.getDate() + daysOffset)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/**
+ * Checks a `--since` / `--until` flag value is a real calendar date written as `YYYY-MM-DD`,
+ * and returns that day's UTC midnight as a timestamp. Throws `INVALID_DATE` otherwise.
+ */
+export function parseDateOption(value: string, option: '--since' | '--until'): number {
+    const match = DATE_PATTERN.exec(value)
+    if (!match) {
+        throw new CliError('INVALID_DATE', `Invalid ${option} date: "${value}"`, [
+            `Use YYYY-MM-DD format, for example: ${option} 2026-08-07`,
+        ])
+    }
+
+    const [, yearString, monthString, dayString] = match
+    const year = Number(yearString)
+    const month = Number(monthString)
+    const day = Number(dayString)
+    const timestamp = Date.UTC(year, month - 1, day)
+    const parsed = new Date(timestamp)
+
+    if (
+        parsed.getUTCFullYear() !== year ||
+        parsed.getUTCMonth() !== month - 1 ||
+        parsed.getUTCDate() !== day
+    ) {
+        throw new CliError('INVALID_DATE', `Invalid ${option} date: "${value}"`, [
+            `Use a valid calendar date in YYYY-MM-DD format`,
+        ])
+    }
+
+    return timestamp
 }
 
 /**

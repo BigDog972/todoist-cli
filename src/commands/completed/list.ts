@@ -2,6 +2,7 @@ import { outputIds, resolveOutputMode } from '@todoist/cli-core'
 import chalk from 'chalk'
 import { getApi, type Project, type Task } from '../../lib/api/core.js'
 import { CollaboratorCache, formatAssignee } from '../../lib/collaborators.js'
+import { parseDateOption } from '../../lib/dates.js'
 import { CliError } from '../../lib/errors.js'
 import type { PaginatedViewOptions } from '../../lib/options.js'
 import {
@@ -22,41 +23,12 @@ interface CompletedListOptions extends PaginatedViewOptions {
 }
 
 const MAX_COMPLETION_DATE_RANGE_DAYS = 93
-const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 
 function getLocalDate(daysOffset = 0): string {
     const date = new Date()
     date.setDate(date.getDate() + daysOffset)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
-function parseDateOption(value: string, option: '--since' | '--until'): number {
-    const match = DATE_PATTERN.exec(value)
-    if (!match) {
-        throw new CliError('INVALID_DATE', `Invalid ${option} date: "${value}"`, [
-            `Use YYYY-MM-DD format, for example: ${option} 2026-08-07`,
-        ])
-    }
-
-    const [, yearString, monthString, dayString] = match
-    const year = Number(yearString)
-    const month = Number(monthString)
-    const day = Number(dayString)
-    const timestamp = Date.UTC(year, month - 1, day)
-    const parsed = new Date(timestamp)
-
-    if (
-        parsed.getUTCFullYear() !== year ||
-        parsed.getUTCMonth() !== month - 1 ||
-        parsed.getUTCDate() !== day
-    ) {
-        throw new CliError('INVALID_DATE', `Invalid ${option} date: "${value}"`, [
-            `Use a valid calendar date in YYYY-MM-DD format`,
-        ])
-    }
-
-    return timestamp
 }
 
 function validateCompletionDateRange(since: string, until: string): void {
