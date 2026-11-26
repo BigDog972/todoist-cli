@@ -1,3 +1,9 @@
+## [7.5.4](https://github.com/todoist/todoist-cli/compare/v7.5.3...v7.5.4) (2026-11-26)
+
+### Bug Fixes
+
+* **deps:** update @todoist/cli-core to 2.0.3 ([#690](https://github.com/todoist/todoist-cli/issues/690)) ([04db5fc](https://github.com/todoist/todoist-cli/commit/04db5fcaa3d9a95e9c53ffde9432bf64a6af2607)), closes [todoist/cli-core#190](https://github.com/todoist/cli-core/issues/190)
+
 ## [7.5.3](https://github.com/todoist/todoist-cli/compare/v7.5.2...v7.5.3) (2026-11-26)
 
 ### Bug Fixes
