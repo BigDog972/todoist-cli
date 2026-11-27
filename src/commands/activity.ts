@@ -7,10 +7,11 @@ import {
 } from '@todoist/sdk'
 import chalk from 'chalk'
 import { Command, Option } from 'commander'
-import { getApi, getCurrentUserId, type Project } from '../lib/api/core.js'
+import { getAccountTimezone, getApi, getCurrentUserId, type Project } from '../lib/api/core.js'
 import { withCaseInsensitiveChoices } from '../lib/completion.js'
 import { CURSOR_DESCRIPTION } from '../lib/constants.js'
-import { parseDateOption } from '../lib/dates.js'
+import { addDays, parseDateOption, startOfDayInTimezone } from '../lib/dates.js'
+import { CliError } from '../lib/errors.js'
 import type { Pagination } from '../lib/options.js'
 import { formatPaginatedJson, formatPaginatedNdjson } from '../lib/output.js'
 import { paginate } from '../lib/pagination.js'
@@ -126,12 +127,55 @@ function formatActivityRow(
     return `${line1}\n${line2}`
 }
 
+// The API refuses a range longer than this.
+const MAX_RANGE_DAYS = 365
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** An instant as the API takes it, in UTC to the second: `2025-01-01T06:00:00Z`. */
+function toApiInstant(instant: Date): string {
+    return instant.toISOString().replace(/\.\d{3}Z$/, 'Z')
+}
+
+/** Checks `--since` and `--until` are dates, in order, before any request is made. */
+function checkDateFlags(since: string | undefined, until: string | undefined): void {
+    if (since) parseDateOption(since, '--since')
+    if (until) parseDateOption(until, '--until')
+    if (since && until && until < since) {
+        throw new CliError('INVALID_DATE_RANGE', '--until must not be before --since', [
+            `Received --since ${since} --until ${until}`,
+        ])
+    }
+}
+
+/**
+ * The instants `--since` and `--until` cover: whole days in the account's `timezone`, from the
+ * start of the `--since` day to the end of the `--until` day. The API reads a bare date as UTC
+ * midnight and leaves out `date_to` itself, so the days are sent as instants.
+ */
+function dateRangeIn(
+    since: string | undefined,
+    until: string | undefined,
+    timezone: string | undefined,
+): { dateFrom?: string; dateTo?: string } {
+    const from = since ? startOfDayInTimezone(since, timezone) : undefined
+    const to = until ? startOfDayInTimezone(addDays(until, 1), timezone) : undefined
+    if (from && to && until && to.getTime() - from.getTime() > MAX_RANGE_DAYS * DAY_MS) {
+        throw new CliError('INVALID_DATE_RANGE', 'Activity date ranges cannot exceed 365 days', [
+            `Split the range, for example --since ${addDays(until, -363)} --until ${until} for the most recent part.`,
+        ])
+    }
+    return {
+        dateFrom: from && toApiInstant(from),
+        dateTo: to && toApiInstant(to),
+    }
+}
+
 export function registerActivityCommand(program: Command): void {
     program
         .command('activity')
         .description('View activity logs')
-        .option('--since <date>', 'Start date (YYYY-MM-DD)')
-        .option('--until <date>', 'End date (YYYY-MM-DD)')
+        .option('--since <date>', 'First day to include (YYYY-MM-DD, in your Todoist time zone)')
+        .option('--until <date>', 'Last day to include (YYYY-MM-DD, in your Todoist time zone)')
         .addOption(
             withCaseInsensitiveChoices(
                 new Option('--type <type>', 'Filter by object type (task, comment, project)'),
@@ -154,8 +198,11 @@ export function registerActivityCommand(program: Command): void {
         .action(async (options: ActivityOptions) => {
             const outputMode = resolveOutputMode(options)
 
-            if (options.since) parseDateOption(options.since, '--since')
-            if (options.until) parseDateOption(options.until, '--until')
+            checkDateFlags(options.since, options.until)
+            // Days are the account's, so look its time zone up alongside the other lookups.
+            // It never rejects: a failed lookup falls back to the machine's zone.
+            const timezone =
+                options.since || options.until ? getAccountTimezone() : Promise.resolve(undefined)
 
             const api = await getApi()
 
@@ -175,6 +222,8 @@ export function registerActivityCommand(program: Command): void {
                 }
             }
 
+            const { dateFrom, dateTo } = dateRangeIn(options.since, options.until, await timezone)
+
             const targetLimit = options.limit ? parseInt(options.limit, 10) : ACTIVITY_LIMIT
 
             const { results: events, nextCursor } = await paginate(
@@ -184,10 +233,8 @@ export function registerActivityCommand(program: Command): void {
                             ? (`${options.type ?? ''}:${options.event ?? ''}` as ActivityObjectEventType)
                             : undefined
                     const resp = await api.getActivityLogs({
-                        // Pass the day as typed. `new Date('2025-01-01')` is UTC midnight, which
-                        // the SDK sends as the local day before anywhere west of UTC.
-                        dateFrom: options.since,
-                        dateTo: options.until,
+                        dateFrom,
+                        dateTo,
                         objectEventTypes,
                         parentProjectId: projectId,
                         initiatorId,
