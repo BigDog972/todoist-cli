@@ -1,10 +1,11 @@
 import { outputIds, resolveOutputMode } from '@todoist/cli-core'
 import chalk from 'chalk'
 import { Command } from 'commander'
+import { parseISO } from 'date-fns/parseISO'
 import { getApi, type Task } from '../lib/api/core.js'
 import { CollaboratorCache, formatAssignee } from '../lib/collaborators.js'
 import { CURSOR_DESCRIPTION } from '../lib/constants.js'
-import { formatDateHeader, getLocalDate, isDueBefore } from '../lib/dates.js'
+import { formatDateHeader, getLocalDate, isDueBefore, parseDueDateToDay } from '../lib/dates.js'
 import type { PaginatedViewOptions } from '../lib/options.js'
 import {
     formatNextCursorFooter,
@@ -118,9 +119,12 @@ export async function showUpcoming(
         if (isDueBefore(dueDate, today)) {
             overdue.push(task)
         } else {
-            const list = byDate.get(dueDate) || []
+            // Group by day: a due date with a time ("2026-11-27T09:00:00") is on the same
+            // day as one without.
+            const day = parseDueDateToDay(dueDate).toISOString().slice(0, 10)
+            const list = byDate.get(day) || []
             list.push(task)
-            byDate.set(dueDate, list)
+            byDate.set(day, list)
         }
     }
 
@@ -149,6 +153,8 @@ export async function showUpcoming(
     for (const date of sortedDates) {
         const dateTasks = byDate.get(date)
         if (!dateTasks) continue // Should not happen since date comes from keys()
+        // The API returns tasks in the order they were created; list the day's by due time.
+        dateTasks.sort((a, b) => dueTime(a) - dueTime(b))
         const header = formatDateHeader(date, today)
         console.log(chalk.bold(`${header} (${dateTasks.length})`))
         for (const task of dateTasks) {
@@ -171,6 +177,12 @@ export async function showUpcoming(
     }
 
     console.log(formatNextCursorFooter(nextCursor))
+}
+
+// A due date without a time reads as midnight, so all-day tasks come before timed ones.
+// A time with a `Z` is a fixed instant; one without is the machine's local time.
+function dueTime(task: Task): number {
+    return task.due ? parseISO(task.due.date).getTime() : 0
 }
 
 export function registerUpcomingCommand(program: Command): void {
