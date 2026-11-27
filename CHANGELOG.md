@@ -1,3 +1,16 @@
+## [7.6.0](https://github.com/todoist/todoist-cli/compare/v7.5.6...v7.6.0) (2026-11-27)
+
+### Features
+
+* sort td today and td upcoming the way the Todoist apps do ([#706](https://github.com/todoist/todoist-cli/issues/706)) ([e881bf3](https://github.com/todoist/todoist-cli/commit/e881bf3695a0f5cc2a95a70b11b75fa6ce6db53c)), closes [#693](https://github.com/todoist/todoist-cli/issues/693) [#693](https://github.com/todoist/todoist-cli/issues/693) [#693](https://github.com/todoist/todoist-cli/issues/693)
+
+### Bug Fixes
+
+* **activity:** read --since and --until as whole days in the account's time zone ([#707](https://github.com/todoist/todoist-cli/issues/707)) ([a7eba96](https://github.com/todoist/todoist-cli/commit/a7eba96b20b7f39dd03151ab48b976f5055d81a0)), closes [#687](https://github.com/todoist/todoist-cli/issues/687)
+* **comment:** show when a comment was posted in the account's time zone ([#703](https://github.com/todoist/todoist-cli/issues/703)) ([5803ddc](https://github.com/todoist/todoist-cli/commit/5803ddc624391c8e536dccec96a19156558a8e53)), closes [#692](https://github.com/todoist/todoist-cli/issues/692)
+* **filter:** sort fixed-offset accounts in their own time zone ([#702](https://github.com/todoist/todoist-cli/issues/702)) ([aaac352](https://github.com/todoist/todoist-cli/commit/aaac352b273f26eccd9969a4e670f923845b72f1))
+* use the account's day for today, upcoming and completed ([#705](https://github.com/todoist/todoist-cli/issues/705)) ([34d2707](https://github.com/todoist/todoist-cli/commit/34d2707356db1587585af242fe0f3bdeffd2da0c))
+
 ## [7.5.6](https://github.com/todoist/todoist-cli/compare/v7.5.5...v7.5.6) (2026-11-27)
 
 ### Bug Fixes
