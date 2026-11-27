@@ -1,3 +1,9 @@
+## [7.5.6](https://github.com/todoist/todoist-cli/compare/v7.5.5...v7.5.6) (2026-11-27)
+
+### Bug Fixes
+
+* **upcoming:** group tasks with a time under their day's heading ([#693](https://github.com/todoist/todoist-cli/issues/693)) ([652c373](https://github.com/todoist/todoist-cli/commit/652c373453502c15781bd1a0434248b5f9b7cdc6))
+
 ## [7.5.5](https://github.com/todoist/todoist-cli/compare/v7.5.4...v7.5.5) (2026-11-26)
 
 ### Bug Fixes
