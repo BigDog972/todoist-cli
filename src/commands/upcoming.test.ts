@@ -394,6 +394,145 @@ describe('upcoming command', () => {
         })
     })
 
+    describe('order', () => {
+        // The API returns tasks in the order they were created.
+        const tasksInCreationOrder = [
+            {
+                id: 'task-1',
+                content: 'Plain task tomorrow',
+                projectId: 'proj-1',
+                priority: 1,
+                due: { date: '2026-11-25' },
+            },
+            {
+                id: 'task-2',
+                content: 'Urgent task tomorrow',
+                projectId: 'proj-1',
+                priority: 4,
+                due: { date: '2026-11-25' },
+            },
+            {
+                id: 'task-3',
+                content: 'Evening task today',
+                projectId: 'proj-1',
+                priority: 1,
+                due: { date: '2026-11-24T18:00:00' },
+            },
+            {
+                id: 'task-4',
+                content: 'Morning task today',
+                projectId: 'proj-1',
+                priority: 1,
+                due: { date: '2026-11-24T09:00:00' },
+            },
+            {
+                id: 'task-5',
+                content: 'Recent overdue task',
+                projectId: 'proj-1',
+                priority: 1,
+                due: { date: '2026-11-23' },
+            },
+            {
+                id: 'task-6',
+                content: 'Old overdue task',
+                projectId: 'proj-1',
+                priority: 1,
+                due: { date: '2026-11-20' },
+            },
+        ]
+
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: ['Date'] })
+            vi.setSystemTime(new Date('2026-11-24T12:00:00Z'))
+            mockApi.getTasksByFilter.mockResolvedValue({
+                results: tasksInCreationOrder,
+                nextCursor: null,
+            })
+            mockApi.getProjects.mockResolvedValue({
+                results: [{ id: 'proj-1', name: 'Work' }],
+                nextCursor: null,
+            })
+        })
+
+        afterEach(() => {
+            vi.useRealTimers()
+        })
+
+        it('lists each section the way the Todoist apps do: oldest first, all-day before timed, then priority', async () => {
+            await createProgram().parseAsync(['node', 'td', 'upcoming'])
+
+            const lines = consoleSpy.mock.calls
+                .map((call: unknown[]) => String(call[0]).split('\n')[0].trim())
+                .filter((line: string) => /^(Overdue|Today|Tomorrow) \(|task/.test(line))
+            expect(lines).toEqual([
+                'Overdue (2)',
+                'Old overdue task',
+                'Recent overdue task',
+                'Today (2)',
+                'Morning task today',
+                'Evening task today',
+                'Tomorrow (2)',
+                'Urgent task tomorrow',
+                'Plain task tomorrow',
+            ])
+        })
+
+        it("orders fixed and floating times by the account's clock", async () => {
+            // For an account in Tokyo, 23:00 UTC on the 24th is 8 AM on the 25th: after a
+            // floating 7 AM on the 25th, and after the 25th's all-day task. The machine is on UTC.
+            vi.mocked(getAccountTimezone).mockResolvedValueOnce('Asia/Tokyo')
+            mockApi.getTasksByFilter.mockResolvedValue({
+                results: [
+                    {
+                        id: 'task-1',
+                        content: 'Fixed 8 AM task',
+                        projectId: 'proj-1',
+                        priority: 1,
+                        due: { date: '2026-11-24T23:00:00Z' },
+                    },
+                    {
+                        id: 'task-2',
+                        content: 'Floating 7 AM task',
+                        projectId: 'proj-1',
+                        priority: 1,
+                        due: { date: '2026-11-25T07:00:00' },
+                    },
+                    {
+                        id: 'task-3',
+                        content: 'All-day task',
+                        projectId: 'proj-1',
+                        priority: 1,
+                        due: { date: '2026-11-25' },
+                    },
+                ],
+                nextCursor: null,
+            })
+
+            await createProgram().parseAsync(['node', 'td', 'upcoming', '--json'])
+
+            const parsed = JSON.parse(String(consoleSpy.mock.calls[0][0]))
+            expect(parsed.results.map((task: { id: string }) => task.id)).toEqual([
+                'task-3',
+                'task-2',
+                'task-1',
+            ])
+        })
+
+        it('uses the same order for --json', async () => {
+            await createProgram().parseAsync(['node', 'td', 'upcoming', '--json'])
+
+            const parsed = JSON.parse(String(consoleSpy.mock.calls[0][0]))
+            expect(parsed.results.map((task: { id: string }) => task.id)).toEqual([
+                'task-6',
+                'task-5',
+                'task-4',
+                'task-3',
+                'task-2',
+                'task-1',
+            ])
+        })
+    })
+
     it('rejects invalid days argument', async () => {
         const program = createProgram()
         const errorSpy = captureConsole('error')

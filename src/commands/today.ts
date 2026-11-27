@@ -15,6 +15,7 @@ import {
 } from '../lib/output.js'
 import { LIMITS, paginate } from '../lib/pagination.js'
 import { fetchProjects, filterByWorkspaceOrPersonal } from '../lib/task-list.js'
+import { sortForDateView } from '../lib/task-sort.js'
 
 interface TodayOptions extends PaginatedViewOptions {
     anyAssignee?: boolean
@@ -60,7 +61,7 @@ export async function showToday(options: TodayOptions): Promise<void> {
         personal: options.personal,
         prefetchedProjects: projects,
     })
-    const filteredTasks = filterResult.tasks
+    const filteredTasks = sortForDateView(filterResult.tasks, timezone)
 
     const overdue = filteredTasks.filter((t) => t.due && dueDateDay(t.due.date, timezone) < today)
     const dueToday = filteredTasks.filter(
