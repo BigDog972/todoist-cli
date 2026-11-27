@@ -296,6 +296,47 @@ describe('upcoming command', () => {
         expect(headings).toEqual(['Tomorrow (3)'])
     })
 
+    it("lists each day's tasks in time order, all-day tasks first", async () => {
+        // The API returns tasks in the order they were created, not by due time.
+        const program = createProgram()
+        const tomorrow = getDateOffset(1)
+
+        mockApi.getTasksByFilter.mockResolvedValue({
+            results: [
+                {
+                    id: 'task-1',
+                    content: 'Evening task',
+                    projectId: 'proj-1',
+                    due: { date: `${tomorrow}T18:00:00` },
+                },
+                {
+                    id: 'task-2',
+                    content: 'Morning task',
+                    projectId: 'proj-1',
+                    due: { date: `${tomorrow}T09:00:00` },
+                },
+                {
+                    id: 'task-3',
+                    content: 'All-day task',
+                    projectId: 'proj-1',
+                    due: { date: tomorrow },
+                },
+            ],
+            nextCursor: null,
+        })
+        mockApi.getProjects.mockResolvedValue({
+            results: [{ id: 'proj-1', name: 'Work' }],
+            nextCursor: null,
+        })
+
+        await program.parseAsync(['node', 'td', 'upcoming'])
+
+        const lines = consoleSpy.mock.calls
+            .map((call: unknown[]) => String(call[0]).split('\n')[0].trim())
+            .filter((line: string) => line.startsWith('Tomorrow') || line.endsWith(' task'))
+        expect(lines).toEqual(['Tomorrow (3)', 'All-day task', 'Morning task', 'Evening task'])
+    })
+
     it('rejects invalid days argument', async () => {
         const program = createProgram()
         const errorSpy = captureConsole('error')
