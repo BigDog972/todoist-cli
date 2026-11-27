@@ -894,6 +894,62 @@ describe('comment view', () => {
         ).rejects.toHaveProperty('code', 'INVALID_REF')
     })
 
+    it("shows when the comment was posted in the account's time zone", async () => {
+        // 02:00 UTC on 9 January is 8 PM on the 8th in Chicago, the account's time zone.
+        mockApi.getComment.mockResolvedValue({
+            id: 'comment-1',
+            content: 'Evening note',
+            postedAt: new Date('2026-01-09T02:00:00Z'),
+            taskId: 'task-1',
+        })
+        const consoleSpy = captureConsole()
+
+        await createProgram().parseAsync(['node', 'td', 'comment', 'view', 'id:comment-1'])
+
+        expect(consoleSpy).toHaveBeenCalledWith('Posted:   Jan 8, 2026, 8:00 PM')
+    })
+
+    it('looks the time zone up while the comment loads', async () => {
+        let deliverComment: (comment: unknown) => void = () => {}
+        mockApi.getComment.mockReturnValue(
+            new Promise((resolve) => {
+                deliverComment = resolve
+            }),
+        )
+        captureConsole()
+
+        const run = createProgram().parseAsync(['node', 'td', 'comment', 'view', 'id:comment-1'])
+        await vi.waitFor(() => expect(getAccountTimezone).toHaveBeenCalled())
+        deliverComment({
+            id: 'comment-1',
+            content: 'Note',
+            postedAt: new Date('2026-01-09T02:00:00Z'),
+            taskId: 'task-1',
+        })
+        await run
+    })
+
+    it('does not look the time zone up for --json', async () => {
+        mockApi.getComment.mockResolvedValue({
+            id: 'comment-1',
+            content: 'Note',
+            postedAt: new Date('2026-01-09T02:00:00Z'),
+            taskId: 'task-1',
+        })
+        captureConsole()
+
+        await createProgram().parseAsync([
+            'node',
+            'td',
+            'comment',
+            'view',
+            'id:comment-1',
+            '--json',
+        ])
+
+        expect(getAccountTimezone).not.toHaveBeenCalled()
+    })
+
     describe('the Notified line', () => {
         async function viewComment() {
             const program = createProgram()
@@ -904,7 +960,7 @@ describe('comment view', () => {
             mockApi.getComment.mockResolvedValue({
                 id: 'comment-1',
                 content: 'Please review',
-                postedAt: '2026-01-01T12:00:00Z',
+                postedAt: new Date('2026-01-01T12:00:00Z'),
                 taskId: 'task-1',
                 uidsToNotify: ['user-ana', 'user-bo'],
             })
@@ -941,7 +997,7 @@ describe('comment view', () => {
             mockApi.getComment.mockResolvedValue({
                 id: 'comment-1',
                 content: 'Please review',
-                postedAt: '2026-01-01T12:00:00Z',
+                postedAt: new Date('2026-01-01T12:00:00Z'),
                 projectId: 'proj-1',
                 uidsToNotify: ['user-ana'],
             })
@@ -968,7 +1024,7 @@ describe('comment view', () => {
             mockApi.getComment.mockResolvedValue({
                 id: 'comment-1',
                 content: 'Please review',
-                postedAt: '2026-01-01T12:00:00Z',
+                postedAt: new Date('2026-01-01T12:00:00Z'),
                 taskId: 'task-1',
                 uidsToNotify: [],
             })
