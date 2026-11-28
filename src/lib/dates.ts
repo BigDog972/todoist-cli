@@ -170,6 +170,36 @@ export function startOfDayInTimezone(day: string, timeZone?: string): Date {
     )
 }
 
+/**
+ * Moves a fixed instant such as `2026-12-11T02:00:00Z` to `day` (`YYYY-MM-DD`) at the same
+ * wall-clock time in `timeZone` (an IANA name or a Todoist fixed offset), as a UTC time ending in
+ * `Z`. For example, `2026-12-11T02:00:00Z` (9pm Dec 10 in America/New_York) moved to `2026-12-12`
+ * is `2026-12-13T02:00:00Z`. Undefined when `timeZone` is one `Intl` does not know.
+ */
+export function moveInstantToDay(
+    instant: string,
+    day: string,
+    timeZone: string,
+): string | undefined {
+    try {
+        new Intl.DateTimeFormat('en-US', { timeZone: toIntlTimeZone(timeZone) })
+    } catch (error) {
+        if (!(error instanceof RangeError)) throw error
+        return undefined
+    }
+    const existing = Date.parse(instant)
+    if (Number.isNaN(existing)) return undefined
+
+    const wallClock = new Date(existing + offsetAt(existing, timeZone)).toISOString().slice(11, 19)
+    const targetAsUtc = Date.parse(`${day}T${wallClock}Z`)
+    if (Number.isNaN(targetAsUtc)) return undefined
+    // The offset on `day` can differ from the one at `instant` across a daylight-saving change, so
+    // it is read near the target, then again at the instant that first guess gives.
+    const guess = targetAsUtc - offsetAt(targetAsUtc, timeZone)
+    const moved = targetAsUtc - offsetAt(guess, timeZone)
+    return `${new Date(moved).toISOString().slice(0, 19)}Z`
+}
+
 /** The `YYYY-MM-DD` day `days` calendar days after `day`, or before it when `days` is negative. */
 export function addDays(day: string, days: number): string {
     return format(addCalendarDays(parseISO(day), days), 'yyyy-MM-dd')

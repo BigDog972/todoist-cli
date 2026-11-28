@@ -12,7 +12,7 @@ import {
 } from '@todoist/sdk'
 import { buildReloginCommand } from '../auth-flags.js'
 import { getAuthMetadata, resolveActiveUser } from '../auth.js'
-import { toIntlTimeZone } from '../dates.js'
+import { moveInstantToDay, toIntlTimeZone } from '../dates.js'
 import { CliError, SyncCommandError } from '../errors.js'
 import { type AdditionalScopeFlag, oauthScopeFor } from '../oauth-scopes.js'
 import { ensureWriteAllowed, isMutatingApiMethod, isMutatingSyncPayload } from '../permissions.js'
@@ -549,8 +549,14 @@ export async function completeTaskForever(taskId: string): Promise<void> {
 
 export function buildRescheduleDate(inputDate: string, existingDue: DueDate): string {
     const isInputDateOnly = !inputDate.includes('T')
-    if (isInputDateOnly && existingDue.datetime) {
-        const timePart = existingDue.datetime.substring(10)
+    // API v1 sends a timed task's time in `due.date`: `2026-12-10T15:00:00`, or UTC with a `Z`
+    // for a task with a fixed timezone.
+    const timePart = existingDue.date.substring(10)
+    if (isInputDateOnly && timePart) {
+        if (timePart.endsWith('Z') && existingDue.timezone) {
+            const moved = moveInstantToDay(existingDue.date, inputDate, existingDue.timezone)
+            if (moved) return moved
+        }
         return inputDate + timePart
     }
     return inputDate

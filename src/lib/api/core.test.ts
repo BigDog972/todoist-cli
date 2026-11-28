@@ -25,32 +25,82 @@ describe('buildRescheduleDate', () => {
         expect(result).toBe('2026-03-20')
     })
 
-    it('preserves existing time when input is date-only and task has datetime', () => {
+    // API v1 sends a timed task's time in `due.date`, not in `due.datetime`.
+    it('preserves existing time when input is date-only and task has a time', () => {
         const result = buildRescheduleDate('2026-03-20', {
-            date: '2026-03-15',
+            date: '2026-03-15T14:00:00',
             string: 'every day at 2pm',
             isRecurring: true,
-            datetime: '2026-03-15T14:00:00',
         })
         expect(result).toBe('2026-03-20T14:00:00')
     })
 
     it('preserves existing time with timezone suffix', () => {
         const result = buildRescheduleDate('2026-03-20', {
-            date: '2026-03-15',
+            date: '2026-03-15T14:00:00Z',
             string: 'every day at 2pm',
             isRecurring: true,
-            datetime: '2026-03-15T14:00:00Z',
         })
         expect(result).toBe('2026-03-20T14:00:00Z')
     })
 
+    it('keeps the time of a one-off timed task', () => {
+        const result = buildRescheduleDate('2026-12-11', {
+            date: '2026-12-10T15:00:00',
+            string: 'Dec 10 2026 at 3pm',
+            isRecurring: false,
+        })
+        expect(result).toBe('2026-12-11T15:00:00')
+    })
+
+    it('keeps the local time of a fixed-timezone task that is a day ahead in UTC', () => {
+        // 9pm Dec 10 in New York is 02:00 Dec 11 in UTC.
+        const result = buildRescheduleDate('2026-12-12', {
+            date: '2026-12-11T02:00:00Z',
+            string: 'Dec 10 2026 at 9pm',
+            isRecurring: false,
+            timezone: 'America/New_York',
+        })
+        expect(result).toBe('2026-12-13T02:00:00Z')
+    })
+
+    it('keeps the local time of a fixed-timezone task moved across a daylight-saving change', () => {
+        // 3pm in New York is 20:00 UTC in December and 19:00 UTC in June.
+        const result = buildRescheduleDate('2026-06-10', {
+            date: '2026-12-10T20:00:00Z',
+            string: 'Dec 10 2026 at 3pm',
+            isRecurring: false,
+            timezone: 'America/New_York',
+        })
+        expect(result).toBe('2026-06-10T19:00:00Z')
+    })
+
+    it('keeps the local time of a task with a Todoist fixed offset', () => {
+        // Midnight Dec 11 at GMT +5:30 is 18:30 Dec 10 in UTC.
+        const result = buildRescheduleDate('2026-12-20', {
+            date: '2026-12-10T18:30:00Z',
+            string: 'Dec 11 2026 at 12am',
+            isRecurring: false,
+            timezone: 'GMT +5:30',
+        })
+        expect(result).toBe('2026-12-19T18:30:00Z')
+    })
+
+    it('keeps the UTC time when the task has a timezone Intl does not know', () => {
+        const result = buildRescheduleDate('2026-12-12', {
+            date: '2026-12-11T02:00:00Z',
+            string: 'Dec 10 2026 at 9pm',
+            isRecurring: false,
+            timezone: 'Not/AZone',
+        })
+        expect(result).toBe('2026-12-12T02:00:00Z')
+    })
+
     it('uses provided datetime when input includes time', () => {
         const result = buildRescheduleDate('2026-03-20T10:00:00', {
-            date: '2026-03-15',
+            date: '2026-03-15T14:00:00',
             string: 'every day at 2pm',
             isRecurring: true,
-            datetime: '2026-03-15T14:00:00',
         })
         expect(result).toBe('2026-03-20T10:00:00')
     })
